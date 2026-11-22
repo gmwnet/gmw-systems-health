@@ -127,7 +127,7 @@ editor, or hand them to a tool or a person you trust and ask them to read them.
 Things worth specifically looking for:
 
     - any use of the computer name, username, or hardware serials
-    - any address other than the one above
+    - any network address other than the endpoint in provision.json
     - anything that hides, encodes, or downloads code
     - anything that keeps running after the script exits
 
