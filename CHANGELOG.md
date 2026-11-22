@@ -4,6 +4,19 @@ Versions follow the tag in this repository, and `$AgentVersion` in `HealthReport
 must match the tag exactly. The release workflow fails the build if they diverge, so the
 number a client sees in a report is the version they actually have.
 
+## 0.1.7 - 2026-11-22
+
+Pending updates now carry a release date, so a count can be judged.
+
+- Each pending update includes `releasedUtc`, from the update client's
+  `LastDeploymentChangeTime`. A count on its own is not a health signal: three updates released
+  yesterday is a normal Tuesday, one still uninstalled six weeks later is a machine that is not
+  patching. The portal flags by **age** now, not by count.
+- Optional **driver** updates are separated from real ones server-side. Windows does not
+  install those automatically on most policies, so they sit pending forever on healthy
+  machines - counting them was a permanent false alarm.
+- No change to anything else collected, or to where it is sent.
+
 ## 0.1.6 - 2026-11-22
 
 Correct fix for the array shape. **0.1.5 was wrong** - do not deploy it.

@@ -196,7 +196,7 @@ param(
 # conflated.
 # -----------------------------------------------------------------------------
 
-$AgentVersion  = '0.1.6'
+$AgentVersion  = '0.1.7'
 $SchemaVersion = 1
 
 # Every timestamp in this report uses this one format: UTC, fixed width, explicit Z.
@@ -741,6 +741,15 @@ if (-not $Fast) {
                 title        = $_.Title
                 kb           = (@($_.KBArticleIDs) -join ',')
                 severity     = $_.MsrcSeverity
+
+                # When the update was last published/revised. A COUNT of pending updates
+                # cannot be judged without it: three updates released yesterday are normal,
+                # one released six weeks ago is a machine that is not patching. This is the
+                # closest thing the update client exposes to a release date.
+                releasedUtc  = if ($_.LastDeploymentChangeTime -and
+                                  $_.LastDeploymentChangeTime -ne [datetime]::MinValue) {
+                    $_.LastDeploymentChangeTime.ToUniversalTime().ToString($script:UtcFormat)
+                } else { $null }
 
                 # Downloaded but not installed is a different operational state
                 # from not-yet-downloaded: it usually means "waiting for a
