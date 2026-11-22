@@ -149,7 +149,11 @@ HOW TO REMOVE IT
 
 Run Uninstall.cmd as administrator, or:
 
-    powershell -File Install-HealthReport.ps1 -Uninstall
+    powershell -ExecutionPolicy Bypass -File Install-HealthReport.ps1 -Uninstall
+
+Literally: on a stock Windows machine, running any .ps1 from a console is blocked
+unless the command asks for Bypass, which is why both forms above include it.
+Uninstall.cmd already does, so the wrapper is the easier path.
 
 That stops the task, unregisters it, and deletes the folder. Because nothing
 else was registered, nothing else needs removing. This is reversible with no

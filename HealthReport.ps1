@@ -196,7 +196,7 @@ param(
 # conflated.
 # -----------------------------------------------------------------------------
 
-$AgentVersion  = '0.1.2'
+$AgentVersion  = '0.1.3'
 $SchemaVersion = 1
 
 # Every timestamp in this report uses this one format: UTC, fixed width, explicit Z.
@@ -258,7 +258,26 @@ function Collect {
     )
 
     try {
-        & $Body
+        $out = & $Body
+
+        # PowerShell UNROLLS an array returned from a function. A section that produced one
+        # BitLocker volume arrived on the wire as an object, while the same section on a
+        # machine with two volumes arrived as an array - one field, two types, and the
+        # single-volume case is the common one. -NoEnumerate keeps the array an array.
+        #
+        # This also fixes the empty case: an empty array used to be unrolled to nothing and
+        # became null, so "no volumes" and "collection failed" looked identical. Only
+        # enumerables are affected; dictionaries (every structured section), strings and
+        # null are passed through untouched.
+        if ($null -ne $out -and
+            $out -is [System.Collections.IEnumerable] -and
+            $out -isnot [string] -and
+            $out -isnot [System.Collections.IDictionary]) {
+            Write-Output -NoEnumerate $out
+        }
+        else {
+            $out
+        }
     }
     catch {
         # The report records WHICH section failed and WHAT KIND of error it was, never

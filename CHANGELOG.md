@@ -4,6 +4,23 @@ Versions follow the tag in this repository, and `$AgentVersion` in `HealthReport
 must match the tag exactly. The release workflow fails the build if they diverge, so the
 number a client sees in a report is the version they actually have.
 
+## 0.1.3 - 2026-11-22
+
+Schema fix, found by comparing two machines' reports.
+
+- A section that returns an array now stays an array on the wire. PowerShell unrolls an
+  array returned from a function, so `security.bitLocker` serialised as an **object** on a
+  machine with one volume and an **array** on a machine with two - one field, two types, and
+  the single-volume case is the common one. Fixed in `Collect` with `-NoEnumerate`, which
+  covers every array-valued section at once rather than patching the field that happened to
+  show it.
+- Consequence also fixed: an **empty** array used to unroll to nothing and become `null`, so
+  "no volumes" and "collection failed" were indistinguishable. They are now `[]` and `null`.
+- README: the manual uninstall command now includes `-ExecutionPolicy Bypass`. Without it the
+  documented command fails on a stock Windows machine, where the default policy is
+  `Restricted` and refuses any .ps1. `Uninstall.cmd` already passed it; the prose did not.
+- No new network destinations, no new data, no change to what is collected.
+
 ## 0.1.2 - 2026-11-22
 
 Second review, this time of the README against the scripts.
