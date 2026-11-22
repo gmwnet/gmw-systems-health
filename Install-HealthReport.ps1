@@ -19,8 +19,13 @@
     Tests may point this at a scratch directory; nothing outside it is touched.
 
 .PARAMETER Task
-    Register the SYSTEM scheduled task. Off by default until the upload path exists;
-    registering a task that collects and discards data would be pointless work twice a day.
+    Accepted for compatibility and passed by Install.cmd. The SYSTEM scheduled task is
+    registered by default; use -NoTask to provision without it.
+
+.PARAMETER NoTask
+    Provision only, without registering the scheduled task. The collector then runs only
+    when someone starts it by hand, so no reports ever arrive on their own. Intended for
+    inspecting an install, not for deploying an agent.
 
 .PARAMETER Uninstall
     Remove the scheduled task and the install root.
@@ -52,11 +57,19 @@ param(
     [int] $EveryHours = 6,
 
     [switch] $Task,
+    [switch] $NoTask,
     [switch] $Uninstall,
     [switch] $TestMode
 )
 
 $ErrorActionPreference = 'Stop'
+
+# Scheduling is the normal operating mode, so the task is registered unless someone opts
+# out. It used to be opt-in (-Task) while the upload path was being built; that default
+# outlived its reason, and a bundle installed without it reports once and then goes quiet,
+# which on the server looks exactly like a healthy machine. -Task is still accepted so an
+# existing command line keeps working; -NoTask is the documented opt-out.
+$registerTask = -not $NoTask
 
 # PowerShell 5.1: $PSScriptRoot is not reliable in param defaults. Resolve it here.
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -179,9 +192,9 @@ $collectorSrc = Join-Path $scriptDir 'HealthReport.ps1'
 if (-not (Test-Path -LiteralPath $collectorSrc)) {
     Write-Host "Missing $collectorSrc (must sit beside this installer)" -ForegroundColor Red; exit 1
 }
-if ($Task -and -not (Select-String -LiteralPath $collectorSrc -Pattern '\[switch\]\s*\$Send' -Quiet)) {
+if ($registerTask -and -not (Select-String -LiteralPath $collectorSrc -Pattern '\[switch\]\s*\$Send' -Quiet)) {
     Write-Host 'Collector has no -Send switch; refusing to register a task that discards its report' -ForegroundColor Red
-    Write-Host 'Leave -Task off until the upload path exists.' -ForegroundColor Red
+    Write-Host 'This bundle is incomplete - download it again rather than installing this copy.' -ForegroundColor Red
     exit 1
 }
 
@@ -271,7 +284,7 @@ if (Test-Path -LiteralPath $bundleCopy) {
 #     same minute, which would look like an incident on the collector.
 #   - Everything here runs as SYSTEM, so no stored password and no user session.
 
-if ($Task) {
+if ($registerTask) {
     $psExe = Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
     $argLine = '-NoProfile -NonInteractive -ExecutionPolicy Bypass -File "{0}" -Send' -f $collectorDst
     $action = New-ScheduledTaskAction -Execute $psExe -Argument $argLine
@@ -321,7 +334,7 @@ if ($Task) {
         -Description 'GMW health and Windows Update reporter' | Out-Null
     Write-Log "Scheduled task '$TaskName' registered (startup + logon + $perDay runs/day from $At, every ${EveryHours}h, SYSTEM)"
 } else {
-    Write-Log 'Task not registered (-Task not given). Provisioning only.'
+    Write-Log 'Task not registered (-NoTask). Provisioning only.'
 }
 
 Write-Log "Done. Agent $agentId"

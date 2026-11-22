@@ -196,7 +196,7 @@ param(
 # conflated.
 # -----------------------------------------------------------------------------
 
-$AgentVersion  = '0.1.0'
+$AgentVersion  = '0.1.1'
 $SchemaVersion = 1
 
 # Every timestamp in this report uses this one format: UTC, fixed width, explicit Z.
@@ -256,9 +256,22 @@ function Collect {
         & $Body
     }
     catch {
+        # The server needs to know WHY a section failed, not what was on disk when it
+        # failed. WMI and CIM exception messages routinely carry full paths - often
+        # inside a user profile - and this field is the one place in the whole report
+        # where text of unknown content can appear. So paths are replaced before the
+        # text leaves the machine, and the result is capped: this is a diagnostic
+        # breadcrumb, not a stack trace.
+        $message = [string]$_.Exception.Message
+        $message = $message -replace '(?i)\\\\[^\s"'']+', '<path>'
+        $message = $message -replace '(?i)\b[A-Z]:\\[^\s"'']*', '<path>'
+        if ($message.Length -gt 200) {
+            $message = $message.Substring(0, 200) + '...'
+        }
+
         $script:CollectErrors.Add([ordered]@{
             section = $Section
-            message = $_.Exception.Message
+            message = $message
         })
         $null
     }

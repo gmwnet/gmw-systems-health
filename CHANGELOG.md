@@ -4,6 +4,22 @@ Versions follow the tag in this repository, and `$AgentVersion` in `HealthReport
 must match the tag exactly. The release workflow fails the build if they diverge, so the
 number a client sees in a report is the version they actually have.
 
+## 0.1.1 - 2026-11-22
+
+Scheduling fix, found by an independent review of a bundle before it was installed.
+
+- The installer now registers the SYSTEM scheduled task by default. Registering it used to
+  require an explicit `-Task`, which `Install.cmd` never passed, so a bundle installed
+  through the documented path proved one report and then never ran again. On the server
+  that is indistinguishable from a healthy machine. `-Task` is still accepted; `-NoTask`
+  provisions without a task, for inspecting an install by hand.
+- `Install.cmd` now passes `-Task` explicitly as well, so the documented path schedules even
+  if the installer default ever changes back.
+- No collector logic change other than diagnostics: a failed section now reports a message
+  with local file paths replaced by `<path>` and truncated to 200 characters. Exception
+  messages can carry profile paths, and that field is the only free text in the report.
+- `$AgentVersion` moves so a report shows which build a machine is running.
+
 ## 0.1.0 - 2026-11-22
 
 First working agent.
