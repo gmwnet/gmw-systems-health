@@ -4,6 +4,21 @@ Versions follow the tag in this repository, and `$AgentVersion` in `HealthReport
 must match the tag exactly. The release workflow fails the build if they diverge, so the
 number a client sees in a report is the version they actually have.
 
+## 0.1.2 - 2026-11-22
+
+Second review, this time of the README against the scripts.
+
+- `collectionErrors` no longer carries the exception message. 0.1.1 replaced path-like
+  substrings with `<path>`, but the pattern stopped at the first space, so
+  `C:\Users\Jane Smith\AppData\...` came out as `<path> Smith\AppData\...` - a name
+  fragment. Rather than widen a regex that cannot be trusted to catch every shape of path,
+  the text is not sent at all. The report records the section, the exception type and the
+  HRESULT.
+- README: the endpoint section no longer presents the production address as the one this
+  bundle uses. It told the reader to stop if `provision.json` disagreed, which is exactly
+  what a development bundle does. The section now names the production address for
+  production deployments and states that a `gmwtest.net` address means a development build.
+
 ## 0.1.1 - 2026-11-22
 
 Scheduling fix, found by an independent review of a bundle before it was installed.

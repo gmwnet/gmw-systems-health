@@ -76,10 +76,10 @@ WHAT IS SENT
     Status of a short fixed list of Windows services
     Counts of recent system errors, by source name only
 
-If one section fails to collect, the report says which section and includes a
-short message: at most 200 characters, with local file paths replaced by
-<path>. That field is the only free text in the whole report, and it is cleaned
-before it leaves the machine.
+If one section fails to collect, the report records which section failed, the
+exception type, and the HRESULT. It does not include the exception message.
+Those messages routinely contain file paths, and Windows profile folders often
+contain a person's name, so the safe choice is not to send the text at all.
 
 
 WHAT IS NOT SENT
@@ -112,13 +112,17 @@ why the identifier is random.
 
 WHERE IT GOES
 
-    One HTTPS POST per run to the GMW Systems apps portal:
+    One HTTPS POST per run to the GMW Systems apps portal. The exact address is
+    written into provision.json, in this bundle. Open that file and read it:
+    that address, not this document, is what the agent will actually do.
+
+    A GMW Systems production deployment reports to:
 
         https://apps.gmwsys.com/api/health-report.php
 
-    That address is also written into provision.json (the configuration file in
-    this bundle). Check that the two match before you install. If they do not,
-    do not install it and tell us.
+    If the address in your provision.json is on a gmwtest.net host instead, you
+    are holding a development build. It is useful for testing and it is not for
+    a live deployment - ask us for the production bundle.
 
 TLS 1.2 or later, normal certificate validation (the agent will not accept an
 untrusted certificate). The agent accepts no inbound connections at all.

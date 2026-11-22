@@ -196,7 +196,7 @@ param(
 # conflated.
 # -----------------------------------------------------------------------------
 
-$AgentVersion  = '0.1.1'
+$AgentVersion  = '0.1.2'
 $SchemaVersion = 1
 
 # Every timestamp in this report uses this one format: UTC, fixed width, explicit Z.
@@ -233,9 +233,14 @@ function Collect {
         should prevent the report from being produced.
 
         So each section is wrapped in this helper: if the script block throws,
-        the error is recorded under "collectionErrors" with the section name and
-        the exception message, and the section's value becomes null. The run
-        continues.
+        the error is recorded under "collectionErrors" with the section name,
+        the exception type and its HRESULT, and the section's value becomes
+        null. The run continues.
+
+        The exception MESSAGE is deliberately not recorded. Messages from WMI
+        and CIM carry file paths, and a Windows profile folder usually contains
+        a person's name, so the text is not sent at all - see the comment on the
+        catch block below.
 
         The trade-off is deliberate. A report missing one section is useful. A
         run that aborts because TPM access was denied is not.
@@ -256,22 +261,20 @@ function Collect {
         & $Body
     }
     catch {
-        # The server needs to know WHY a section failed, not what was on disk when it
-        # failed. WMI and CIM exception messages routinely carry full paths - often
-        # inside a user profile - and this field is the one place in the whole report
-        # where text of unknown content can appear. So paths are replaced before the
-        # text leaves the machine, and the result is capped: this is a diagnostic
-        # breadcrumb, not a stack trace.
-        $message = [string]$_.Exception.Message
-        $message = $message -replace '(?i)\\\\[^\s"'']+', '<path>'
-        $message = $message -replace '(?i)\b[A-Z]:\\[^\s"'']*', '<path>'
-        if ($message.Length -gt 200) {
-            $message = $message.Substring(0, 200) + '...'
-        }
+        # The report records WHICH section failed and WHAT KIND of error it was, never
+        # the message text. Messages from WMI and CIM routinely embed file paths, and a
+        # Windows profile folder often contains a person's name. A regex that strips
+        # paths cannot be trusted to catch every shape of one - the previous attempt
+        # stopped at the first space and left "C:\Users\Jane Smith\..." as
+        # "<path> Smith\...", name included. A type and an HRESULT are enough to tell
+        # access-denied from not-supported, and neither can carry a name.
+        $ex = $_.Exception
+        $hresult = if ($ex.HResult) { '0x{0:X8}' -f $ex.HResult } else { $null }
 
         $script:CollectErrors.Add([ordered]@{
             section = $Section
-            message = $message
+            type    = $ex.GetType().Name
+            hresult = $hresult
         })
         $null
     }
