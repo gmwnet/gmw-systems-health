@@ -251,6 +251,21 @@ $collectorDst = Join-Path $RootDir 'HealthReport.ps1'
 Copy-Item -LiteralPath $collectorSrc -Destination $collectorDst -Force
 Write-Log "Collector installed to $collectorDst"
 
+# The uninstaller has to live WITH the install. The bundle - and the folder it was extracted
+# to - are deleted after a successful install, which until 0.1.5 left a client holding a
+# scheduled task and no supported way to remove it. Uninstall.cmd finds the installer through
+# %~dp0, so both files belong in the same directory; the ACL set above already covers them.
+foreach ($helper in @('Install-HealthReport.ps1', 'Uninstall.cmd')) {
+    $helperSrc = Join-Path $scriptDir $helper
+    if (Test-Path -LiteralPath $helperSrc) {
+        Copy-Item -LiteralPath $helperSrc -Destination (Join-Path $RootDir $helper) -Force
+        Write-Log "Installed $helper into $RootDir"
+    }
+    else {
+        Write-Log "Bundle is missing $helper - removal will need the original zip" 'WARN'
+    }
+}
+
 # Prove it runs before deleting the only copy of the key.
 $probe = Join-Path $RootDir 'report.selfcheck.json'
 & $collectorDst -AgentConfig (Join-Path $RootDir 'agent.json') -Fast -OutFile $probe

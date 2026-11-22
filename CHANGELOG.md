@@ -4,6 +4,19 @@ Versions follow the tag in this repository, and `$AgentVersion` in `HealthReport
 must match the tag exactly. The release workflow fails the build if they diverge, so the
 number a client sees in a report is the version they actually have.
 
+## 0.1.5 - 2026-11-22
+
+The install folder can remove itself.
+
+- `Install-HealthReport.ps1` and `Uninstall.cmd` are now copied into the install folder
+  alongside the collector. Until now only the collector was copied, so once the zip and its
+  extracted folder were deleted - which `README.txt` tells the reader to do - a machine was
+  left with a scheduled task and **no supported way to remove it**. The README promised
+  "Run Uninstall.cmd as administrator" and there was no such file.
+- Found while uninstalling a real machine, not by reading the code.
+- No change to what is collected, where it is sent, or the footprint: still one folder plus
+  one scheduled task, now with its own removal tool inside it.
+
 ## 0.1.4 - 2026-11-22
 
 Install folder renamed.

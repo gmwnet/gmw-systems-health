@@ -196,7 +196,7 @@ param(
 # conflated.
 # -----------------------------------------------------------------------------
 
-$AgentVersion  = '0.1.4'
+$AgentVersion  = '0.1.5'
 $SchemaVersion = 1
 
 # Every timestamp in this report uses this one format: UTC, fixed width, explicit Z.
