@@ -87,8 +87,9 @@ why the identifier is random.
 
 WHERE IT GOES
 
-    POST https://apps.gmwtest.net/api/health-report.php
-    production: https://apps.gmwsys.com/api/health-report.php
+    One HTTPS POST to the GMW Systems apps portal. The exact endpoint URL is in
+    provision.json (the configuration file in this bundle), so you can read it
+    before running anything.
 
 One outbound HTTPS connection per run, TLS 1.2 or later, normal certificate
 validation (the agent will not accept an untrusted certificate). The agent
@@ -135,9 +136,9 @@ There is none of that. If you find any of it, do not install this, and tell us.
 SHA-256 checksums for every file are in SHA256SUMS.txt. Compare them before
 running anything.
 
-The same list is published at
-https://github.com/gmwnet/gmw-systems-health/releases/tag/v0.1.0 — check that the
-release tag matches the version the installed agent reports.
+The same list is published under
+https://github.com/gmwnet/gmw-systems-health/releases — open the release whose tag
+matches the version the installed agent reports.
 
 
 ABOUT CODE SIGNING
@@ -183,7 +184,6 @@ between machines.
 QUESTIONS
 
 GMW Systems LLC
-garrett@gmwsys.com
 425-320-5823
 
 The source for this agent is published under the MIT licence, so you can read it, keep

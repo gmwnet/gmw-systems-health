@@ -1,0 +1,2 @@
+# Keep every checkout byte-exact: the published SHA-256 sums are the trust anchor.
+* -text
