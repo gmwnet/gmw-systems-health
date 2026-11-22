@@ -15,7 +15,7 @@
     The key never appears on the console, and it never touches disk unencrypted.
 
 .PARAMETER RootDir
-    Install root. Default: C:\ProgramData\WindowsHealthReport
+    Install root. Default: C:\ProgramData\GMWSystemsHealth
     Tests may point this at a scratch directory; nothing outside it is touched.
 
 .PARAMETER Task
@@ -75,10 +75,24 @@ $registerTask = -not $NoTask
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 if (-not $scriptDir) { $scriptDir = (Get-Location).Path }
 
-if (-not $RootDir)       { $RootDir = Join-Path $env:ProgramData 'WindowsHealthReport' }
+if (-not $RootDir)       { $RootDir = Join-Path $env:ProgramData 'GMWSystemsHealth' }
 if (-not $ProvisionFile) { $ProvisionFile = Join-Path $scriptDir 'provision.json' }
 $RootDir       = [IO.Path]::GetFullPath($RootDir)
 $ProvisionFile = [IO.Path]::GetFullPath($ProvisionFile)
+
+# The install folder was renamed from WindowsHealthReport after 0.1.3, because that name
+# reads like a Microsoft component while sitting in a directory full of vendor folders. A
+# machine still carrying the old root has its OWN sealed key and scheduled task, so
+# installing under the new name would leave two agents reporting under one agent ID. Refuse
+# and point at the old uninstaller rather than quietly creating that mess.
+$legacyRoot = Join-Path $env:ProgramData 'WindowsHealthReport'
+if (-not $TestMode -and -not $Uninstall -and (Test-Path -LiteralPath $legacyRoot) -and
+    $RootDir -ne [IO.Path]::GetFullPath($legacyRoot)) {
+    Write-Host "An older install is present at $legacyRoot" -ForegroundColor Red
+    Write-Host 'Remove it first, then run this installer again:' -ForegroundColor Red
+    Write-Host ("  powershell -ExecutionPolicy Bypass -File `"{0}\Install-HealthReport.ps1`" -Uninstall" -f $legacyRoot) -ForegroundColor Red
+    exit 1
+}
 
 # TestMode skips ACL hardening. That is fine in a scratch directory and unacceptable in the
 # real one, so require an explicit root and refuse anything that looks like a system install

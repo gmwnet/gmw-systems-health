@@ -135,9 +135,9 @@ switch skips it.
 
 WHAT CHANGES ON THE COMPUTER
 
-    C:\ProgramData\WindowsHealthReport\     one folder containing the scripts,
-                                            the sealed key, any unsent reports,
-                                            and a log
+    C:\ProgramData\GMWSystemsHealth\     one folder containing the scripts,
+                                         the sealed key, any unsent reports,
+                                         and a log
     One scheduled task: "GMW Systems Health Report"
 
 No registry writes. The script reads a few registry values (the Windows version

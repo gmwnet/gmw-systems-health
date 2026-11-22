@@ -102,7 +102,7 @@
 
 .PARAMETER AgentConfig
     Path to the agent identity file, normally written by the installer at
-    C:\ProgramData\WindowsHealthReport\agent.json. It holds the random agent ID
+    C:\ProgramData\GMWSystemsHealth\agent.json. It holds the random agent ID
     and the collection endpoint. If the file is missing the report is still
     produced, but "agentId" is null and a collectionErrors entry is recorded so
     that the sender knows not to upload an unattributable report.
@@ -183,7 +183,7 @@
 [CmdletBinding()]
 param(
     [string] $OutFile,
-    [string] $AgentConfig = "$env:ProgramData\WindowsHealthReport\agent.json",
+    [string] $AgentConfig = "$env:ProgramData\GMWSystemsHealth\agent.json",
     [switch] $Fast,
     [switch] $Compress,
     [switch] $Send
@@ -196,7 +196,7 @@ param(
 # conflated.
 # -----------------------------------------------------------------------------
 
-$AgentVersion  = '0.1.3'
+$AgentVersion  = '0.1.4'
 $SchemaVersion = 1
 
 # Every timestamp in this report uses this one format: UTC, fixed width, explicit Z.

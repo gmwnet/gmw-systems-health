@@ -4,6 +4,21 @@ Versions follow the tag in this repository, and `$AgentVersion` in `HealthReport
 must match the tag exactly. The release workflow fails the build if they diverge, so the
 number a client sees in a report is the version they actually have.
 
+## 0.1.4 - 2026-11-22
+
+Install folder renamed.
+
+- The folder is now `C:\ProgramData\GMWSystemsHealth`. It was `WindowsHealthReport`, which
+  reads like a Microsoft component sitting in a directory full of vendor folders, so a human
+  looking for "the GMW thing" would not find it. Nothing else changes: still one folder plus
+  one scheduled task.
+- The installer refuses to run when the old `WindowsHealthReport` folder is still present,
+  and prints the uninstall command for it. That older install has its own sealed key and
+  scheduled task, so installing alongside it would leave two agents reporting under one agent
+  ID - and the old key has been revoked, so it would fail silently as 401s.
+- Upgrading from 0.1.3 or earlier therefore means: uninstall the old copy first, then install
+  this one. There is no in-place migration, because nothing is deployed at scale yet.
+
 ## 0.1.3 - 2026-11-22
 
 Schema fix, found by comparing two machines' reports.
