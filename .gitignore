@@ -1,0 +1,16 @@
+# Provisioning material - NEVER commit. A key here is public forever.
+provision.json
+*.key
+*.pfx
+*.p12
+spool/
+client.key
+
+# Per-machine bundles and local test bundles
+*.zip
+_dev/
+
+# Local working files, not part of the distributed agent
+AGENTS.md
+PROJECTS.md
+*.log

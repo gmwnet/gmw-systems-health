@@ -1,0 +1,70 @@
+name: release
+
+# Tag v0.1.0 -> checksums, zip, build provenance, GitHub release.
+# The published SHA256SUMS.txt is the "available independently of the bundle" source that
+# README.txt promises. It covers the source files only: provision.json is per-machine and
+# must never appear here.
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: AgentVersion must match the tag
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          # Match on the assignment without ever handling a literal "$": three levels of
+          # quoting are how you get a workflow that fails only when it matters.
+          ver=$(grep -oE "AgentVersion[[:space:]]*=[[:space:]]*'[^']+'" HealthReport.ps1 \
+                | sed -E "s/.*'([^']+)'/\1/" | head -n1)
+          echo "tag=$tag  AgentVersion=$ver"
+          if [ -z "$ver" ]; then
+            echo "::error::Could not read AgentVersion from HealthReport.ps1"
+            exit 1
+          fi
+          if [ "$ver" != "$tag" ]; then
+            echo "::error::AgentVersion ($ver) does not match tag ($tag). Bump the script or re-tag."
+            exit 1
+          fi
+
+      - name: Build checksums
+        run: |
+          sha256sum HealthReport.ps1 Install-HealthReport.ps1 Install.cmd Uninstall.cmd \
+                    README.txt LICENSE CHANGELOG.md > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - name: Build source bundle
+        run: |
+          zip -q "windows-health-agent-${GITHUB_REF_NAME}.zip" \
+              HealthReport.ps1 Install-HealthReport.ps1 Install.cmd Uninstall.cmd \
+              README.txt LICENSE CHANGELOG.md
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-path: 'windows-health-agent-*.zip'
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            windows-health-agent-*.zip
+            SHA256SUMS.txt
+          generate_release_notes: true
+          body: |
+            Source release for the GMW Systems health agent.
+
+            `SHA256SUMS.txt` covers every file in this release. Per-machine bundles are
+            minted from these files; `provision.json` is generated per client and is never
+            part of a release.
