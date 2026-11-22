@@ -151,6 +151,9 @@ Run Uninstall.cmd as administrator, or:
 
     powershell -ExecutionPolicy Bypass -File Install-HealthReport.ps1 -Uninstall
 
+Both live in the install folder, C:\ProgramData\GMWSystemsHealth\, so they are
+still there after the bundle and its zip are deleted.
+
 Literally: on a stock Windows machine, running any .ps1 from a console is blocked
 unless the command asks for Bypass, which is why both forms above include it.
 Uninstall.cmd already does, so the wrapper is the easier path.
