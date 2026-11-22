@@ -4,6 +4,22 @@ Versions follow the tag in this repository, and `$AgentVersion` in `HealthReport
 must match the tag exactly. The release workflow fails the build if they diverge, so the
 number a client sees in a report is the version they actually have.
 
+## 0.1.6 - 2026-11-22
+
+Correct fix for the array shape. **0.1.5 was wrong** - do not deploy it.
+
+- 0.1.5 tried to fix the collapsing array in `Collect` with `Write-Output -NoEnumerate`.
+  That does not emit an array, it emits a PSObject wrapping one, which serialises as
+  `{"value": [...]}` - so `services` and `windowsUpdate.history` came back wrapped while
+  `security.bitLocker` was still a bare object. Worse than the bug it replaced.
+- The array is flattened **before** `Collect` sees it: PowerShell enumerates a value returned
+  from a script block, so `@($one)` arrives as a bare object. The fix therefore has to be at
+  the six sections that return lists - `activation`, `diskHealth`, `windowsUpdate.history`,
+  `security.firewall`, `security.bitLocker`, `services` - each now writing `,@(...)`.
+- The leading comma is load-bearing and documented in `Collect`'s help, including the count,
+  so a seventh list section does not silently reintroduce the bug.
+- No change to what is collected or where it is sent.
+
 ## 0.1.5 - 2026-11-22
 
 The install folder can remove itself.

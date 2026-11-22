@@ -196,7 +196,7 @@ param(
 # conflated.
 # -----------------------------------------------------------------------------
 
-$AgentVersion  = '0.1.5'
+$AgentVersion  = '0.1.6'
 $SchemaVersion = 1
 
 # Every timestamp in this report uses this one format: UTC, fixed width, explicit Z.
@@ -245,6 +245,14 @@ function Collect {
         The trade-off is deliberate. A report missing one section is useful. A
         run that aborts because TPM access was denied is not.
 
+        A section that returns a LIST must write it as `,@(...)` - with the
+        leading comma. PowerShell enumerates a value returned from a function,
+        so a one-element array leaves here as a bare object, and the same
+        section then serialises as an object on a machine with one item and an
+        array on a machine with two. The comma emits the array as a single
+        object, which is the only way to keep it an array without changing what
+        the section means. Six sections return lists; all six carry the comma.
+
     .PARAMETER Section
         Name recorded in collectionErrors. Kept stable so the server can group
         failures by section across the fleet.
@@ -258,26 +266,7 @@ function Collect {
     )
 
     try {
-        $out = & $Body
-
-        # PowerShell UNROLLS an array returned from a function. A section that produced one
-        # BitLocker volume arrived on the wire as an object, while the same section on a
-        # machine with two volumes arrived as an array - one field, two types, and the
-        # single-volume case is the common one. -NoEnumerate keeps the array an array.
-        #
-        # This also fixes the empty case: an empty array used to be unrolled to nothing and
-        # became null, so "no volumes" and "collection failed" looked identical. Only
-        # enumerables are affected; dictionaries (every structured section), strings and
-        # null are passed through untouched.
-        if ($null -ne $out -and
-            $out -is [System.Collections.IEnumerable] -and
-            $out -isnot [string] -and
-            $out -isnot [System.Collections.IDictionary]) {
-            Write-Output -NoEnumerate $out
-        }
-        else {
-            $out
-        }
+        & $Body
     }
     catch {
         # The report records WHICH section failed and WHAT KIND of error it was, never
@@ -476,7 +465,7 @@ $report.activation = Collect 'activation' {
         6 = 'ExtendedGrace'
     }
 
-    @($slp | ForEach-Object {
+    ,@($slp | ForEach-Object {
         [ordered]@{
             statusCode = $_.LicenseStatus
             status     = $names[[int]$_.LicenseStatus]
@@ -653,7 +642,7 @@ $report.diskHealth = Collect 'diskHealth' {
 
     # Note the deliberate absence of disk names: size is enough to correlate
     # this with the physicalDisks list above, and a model name is a fingerprint.
-    @(Get-PhysicalDisk -ErrorAction SilentlyContinue | ForEach-Object {
+    ,@(Get-PhysicalDisk -ErrorAction SilentlyContinue | ForEach-Object {
         $d = $_
         $r = $d | Get-StorageReliabilityCounter -ErrorAction SilentlyContinue
 
@@ -797,7 +786,7 @@ if (-not $Fast) {
 
         # 15 entries is enough to show a pattern - "the last eight failed" - while
         # keeping the payload small. QueryHistory takes (startIndex, count).
-        @($searcher.QueryHistory(0, 15) | ForEach-Object {
+        ,@($searcher.QueryHistory(0, 15) | ForEach-Object {
             [ordered]@{
                 dateUtc    = $_.Date.ToUniversalTime().ToString($script:UtcFormat)
                 title      = $_.Title
@@ -887,7 +876,7 @@ $report.security.firewall = Collect 'firewall' {
     # Per profile rather than a single boolean: a machine with Domain on and
     # Public off is a specific, common misconfiguration that an aggregate flag
     # would hide.
-    @(Get-NetFirewallProfile | ForEach-Object {
+    ,@(Get-NetFirewallProfile | ForEach-Object {
         [ordered]@{
             profile = $_.Name
             enabled = $_.Enabled
@@ -930,7 +919,7 @@ $report.security.bitLocker = Collect 'bitLocker' {
     # for six months means something is stuck, which volume status alone hides.
     # No recovery passwords or key protectors are read - that is not health data,
     # and there is no reason for it to leave the machine.
-    @(Get-BitLockerVolume -ErrorAction Stop | ForEach-Object {
+    ,@(Get-BitLockerVolume -ErrorAction Stop | ForEach-Object {
         [ordered]@{
             mountPoint    = $_.MountPoint
             volumeStatus  = "$($_.VolumeStatus)"
@@ -954,7 +943,7 @@ $report.services = Collect 'services' {
 
     $watch = 'WinDefend', 'wuauserv', 'BITS', 'DoSvc', 'EventLog', 'LanmanServer', 'Spooler', 'TermService'
 
-    @(Get-Service -Name $watch -ErrorAction SilentlyContinue | ForEach-Object {
+    ,@(Get-Service -Name $watch -ErrorAction SilentlyContinue | ForEach-Object {
         [ordered]@{
             name      = $_.Name
             status    = "$($_.Status)"
